@@ -42,6 +42,7 @@ unsigned long *context;
 unsigned long **cols;
 int *supps;
 int *attrib_numbers;
+int *object_numbers;
 unsigned long upto_bit[ARCHBIT + 1];
 int attr_offset = 0;
 FILE *in_file;
@@ -177,19 +178,24 @@ initialize_output(void)
   attrib_numbers = (int *)malloc(sizeof(int) * attributes);
   for(i = 0; i < attributes; i++)
     attrib_numbers[i] = i;
+
+  object_numbers = (int *)malloc(sizeof(int) * objects);
+  for(i = 0; i < objects; i++)
+    object_numbers[i] = i;
 }
 
 void
-print_attributes(set, supp)
+print_attributes(set)
      unsigned long *set;
-     size_t supp;
 {
   int i, j, c;
   int first = 1;
   if(verbosity_level <= 0)
     return;
+
   for(c = j = 0; j < int_count_a; j++)
     {
+
       for(i = ARCHBIT; i >= 0; i--)
 	{
 	  if(set[j] & (BIT << i))
@@ -201,6 +207,38 @@ print_attributes(set, supp)
 	    }
 	  c++;
 	  if(c >= attributes)
+	    goto out;
+	}
+    }
+out:
+  fprintf(out_file, " - ");
+}
+
+void
+print_objects(set)
+     unsigned long *set;
+{
+  int i, j, c;
+  int first = 1;
+  if(verbosity_level <= 0)
+    return;
+
+  for(c = j = 0; j < int_count_o; j++)
+    {
+
+      /* fprintf(out_file, ">> tidset %lu\n", set[j]); */
+
+      for(i = 0; i <= ARCHBIT; i++)
+	{
+	  if(set[j] & (BIT << i))
+	    {
+	      if(!first)
+		fprintf(out_file, " ");
+	      fprintf(out_file, "%i", object_numbers[c]);
+	      first = 0;
+	    }
+	  c++;
+	  if(c >= objects)
 	    goto out;
 	}
     }
@@ -244,6 +282,14 @@ rows_compar(a, b)
   return 0;
 }
 
+int object_numbers_compar(a, b)
+     void *a, *b;
+{
+  void *row_a = context + int_count_a * (*(int const *) a);
+  void *row_b = context + int_count_a * (*(int const *) b);
+  return rows_compar(row_a, row_b);
+}
+
 void
 sort_context(void)
 {
@@ -280,6 +326,7 @@ sort_context(void)
     }
   free(context);
   context = new_context;
+  qsort(object_numbers, objects, sizeof(int), object_numbers_compar);
   qsort(context, objects, BYTE_COUNT_A, rows_compar);
 }
 
@@ -409,7 +456,8 @@ generate_from_node(intent, extent, start_int, start_bit, starts, implied, implie
 		stats.fail_canon++;
 		goto skiptoelse;
 	      }
-	  print_attributes(new_intent, supp);
+	  print_attributes(new_intent);
+          print_objects(new_extent);
 	  stats.total++; *start_i = start_int; start_i++;
 	  *start_i = start_bit; start_i++;
 	  goto skipoverelse;
@@ -455,7 +503,8 @@ find_all_intents(void)
   intent = (unsigned long *)malloc(BYTE_COUNT_A + BYTE_COUNT_O);
   extent = intent + int_count_a;
   compute_closure(intent, extent, NULL, NULL);
-  print_attributes(intent, objects);
+  print_attributes(intent);
+  print_objects(extent);
   stats.total++;
   if(intent[int_count_a - 1] & BIT)
     return;
