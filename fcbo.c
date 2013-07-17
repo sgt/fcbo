@@ -184,14 +184,13 @@ initialize_output(void)
     object_numbers[i] = i;
 }
 
-void
+int
 print_attributes(set)
      unsigned long *set;
 {
   int i, j, c;
+  int total = 0;
   int first = 1;
-  if(verbosity_level <= 0)
-    return;
 
   for(c = j = 0; j < int_count_a && c < attributes; j++)
     {
@@ -204,20 +203,21 @@ print_attributes(set)
 		fprintf(out_file, " ");
 	      fprintf(out_file, "%i", attrib_numbers[c]);
 	      first = 0;
+              total++;
 	    }
 	  c++;
 	}
     }
+  return total;
 }
 
-void
+int
 print_objects(set)
      unsigned long *set;
 {
   int i, j, c;
+  int total = 0;
   int first = 1;
-  if(verbosity_level <= 0)
-    return;
 
   for(c = j = 0; j < int_count_o && c < objects; j++)
     {
@@ -232,17 +232,25 @@ print_objects(set)
 		fprintf(out_file, " ");
 	      fprintf(out_file, "%i", object_numbers[c]);
 	      first = 0;
+              total++;
 	    }
 	  c++;
 	}
     }
+  return total;
 }
 
 void print_clojure_it_pair(unsigned long *itemset, unsigned long *tidset) {
+  int total_attributes;
+
+  if (verbosity_level <= 0)
+    return;
+
   fprintf(out_file, "[#{");
-  print_attributes(itemset);
+  total_attributes = print_attributes(itemset);
   fprintf(out_file, "} #{");
-  print_objects(tidset);
+  if (total_attributes > 0)
+    print_objects(tidset);
   fprintf(out_file, "}]\n");
 }
 
@@ -503,7 +511,7 @@ find_all_intents(void)
   unsigned long ***implied_stack;
   intent = (unsigned long *)malloc(BYTE_COUNT_A + BYTE_COUNT_O);
   extent = intent + int_count_a;
-  compute_closure(intent, extent, NULL, NULL);
+  compute_closure(intent, extent, NULL, NULL, NULL);
 
   print_clojure_it_pair(intent, extent);
 
