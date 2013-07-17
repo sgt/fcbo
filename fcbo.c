@@ -193,10 +193,10 @@ print_attributes(set)
   if(verbosity_level <= 0)
     return;
 
-  for(c = j = 0; j < int_count_a && c <= attributes; j++)
+  for(c = j = 0; j < int_count_a && c < attributes; j++)
     {
 
-      for(i = ARCHBIT; i >= 0 && c <= attributes; i--)
+      for(i = ARCHBIT; i >= 0 && c < attributes; i--)
 	{
 	  if(set[j] & (BIT << i))
 	    {
@@ -219,12 +219,12 @@ print_objects(set)
   if(verbosity_level <= 0)
     return;
 
-  for(c = j = 0; j < int_count_o && c <= attributes; j++)
+  for(c = j = 0; j < int_count_o && c < objects; j++)
     {
 
       /* fprintf(out_file, ">> tidset %lu\n", set[j]); */
 
-      for(i = 0; i <= ARCHBIT && c <= attributes; i++)
+      for(i = 0; i <= ARCHBIT && c < objects; i++)
 	{
 	  if(set[j] & (BIT << i))
 	    {
