@@ -193,10 +193,10 @@ print_attributes(set)
   if(verbosity_level <= 0)
     return;
 
-  for(c = j = 0; j < int_count_a; j++)
+  for(c = j = 0; j < int_count_a && c <= attributes; j++)
     {
 
-      for(i = ARCHBIT; i >= 0; i--)
+      for(i = ARCHBIT; i >= 0 && c <= attributes; i--)
 	{
 	  if(set[j] & (BIT << i))
 	    {
@@ -206,12 +206,8 @@ print_attributes(set)
 	      first = 0;
 	    }
 	  c++;
-	  if(c >= attributes)
-	    goto out;
 	}
     }
-out:
-  fprintf(out_file, " - ");
 }
 
 void
@@ -223,12 +219,12 @@ print_objects(set)
   if(verbosity_level <= 0)
     return;
 
-  for(c = j = 0; j < int_count_o; j++)
+  for(c = j = 0; j < int_count_o && c <= attributes; j++)
     {
 
       /* fprintf(out_file, ">> tidset %lu\n", set[j]); */
 
-      for(i = 0; i <= ARCHBIT; i++)
+      for(i = 0; i <= ARCHBIT && c <= attributes; i++)
 	{
 	  if(set[j] & (BIT << i))
 	    {
@@ -238,12 +234,16 @@ print_objects(set)
 	      first = 0;
 	    }
 	  c++;
-	  if(c >= objects)
-	    goto out;
 	}
     }
-out:
-  fprintf(out_file, "\n");
+}
+
+void print_clojure_it_pair(unsigned long *itemset, unsigned long *tidset) {
+  fprintf(out_file, "[#{");
+  print_attributes(itemset);
+  fprintf(out_file, "} #{");
+  print_objects(tidset);
+  fprintf(out_file, "}]\n");
 }
 
 int
@@ -456,8 +456,9 @@ generate_from_node(intent, extent, start_int, start_bit, starts, implied, implie
 		stats.fail_canon++;
 		goto skiptoelse;
 	      }
-	  print_attributes(new_intent);
-          print_objects(new_extent);
+
+          print_clojure_it_pair(new_intent, new_extent);
+
 	  stats.total++; *start_i = start_int; start_i++;
 	  *start_i = start_bit; start_i++;
 	  goto skipoverelse;
@@ -503,8 +504,9 @@ find_all_intents(void)
   intent = (unsigned long *)malloc(BYTE_COUNT_A + BYTE_COUNT_O);
   extent = intent + int_count_a;
   compute_closure(intent, extent, NULL, NULL);
-  print_attributes(intent);
-  print_objects(extent);
+
+  print_clojure_it_pair(intent, extent);
+
   stats.total++;
   if(intent[int_count_a - 1] & BIT)
     return;
